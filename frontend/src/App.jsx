@@ -1,71 +1,85 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-import PrivateRoute from './routes/PrivateRoute';
-import RoleRoute from './routes/RoleRoute';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+
+// Pages
 import LoginPage from './pages/LoginPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
 import HomePage from './pages/HomePage';
-import ProjectListPage from './pages/ProjectListPage';
-import ProjectDetailPage from './pages/ProjectDetailPage';
-import MyProjectsPage from './pages/MyProjectsPage';
-import NotificationsPage from './pages/NotificationsPage';
-import AdminPage from './pages/AdminPage';
-import FollowingPage from './pages/FollowingPage';
-import TermsPage from './pages/TermsPage';
-import PrivacyPage from './pages/PrivacyPage';
+import ExhibitionListPage from './pages/ExhibitionListPage';
+import CreateReservationPage from './pages/CreateReservationPage';
+import MyReservationsPage from './pages/MyReservationsPage';
+import ReservationDetailPage from './pages/ReservationDetailPage';
+import ProfilePage from './pages/ProfilePage';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminExhibitionPage from './pages/AdminExhibitionPage';
 import NotFoundPage from './pages/NotFoundPage';
 
-function AppLayout({ children }) {
-  return (
-    <div className="app-shell">
-      <Navbar />
-      <main className="main-content">{children}</main>
-      <Footer />
+// Private Route Component
+const PrivateRoute = ({ children, requireAdmin }) => {
+  const { user, loading } = useAuth();
+  
+  if (loading) return (
+    <div className="flex h-screen items-center justify-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600"></div>
     </div>
   );
-}
+  
+  if (!user) return <Navigate to="/login" replace />;
+  if (requireAdmin && user.role !== 'EXHIBITION_ORGANIZER') return <Navigate to="/" replace />;
+  
+  return children;
+};
 
-export default function App() {
+const AppContent = () => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600"></div>
+      </div>
+    );
+  }
+
   return (
-    <BrowserRouter>
-      <AuthProvider>
+    <div className="min-h-screen flex flex-col bg-slate-50">
+      <Navbar />
+      <main className="flex-grow">
         <Routes>
-          {/* Public */}
-          <Route path="/login" element={<LoginPage />} />
+          {/* Public Routes */}
+          <Route path="/login" element={user ? <Navigate to="/" /> : <LoginPage />} />
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
-          <Route path="/terms" element={<AppLayout><TermsPage /></AppLayout>} />
-          <Route path="/privacy" element={<AppLayout><PrivacyPage /></AppLayout>} />
 
-          {/* Public App Routes */}
-          <Route path="/" element={<AppLayout><HomePage /></AppLayout>} />
-          <Route path="/projects" element={<AppLayout><ProjectListPage /></AppLayout>} />
-          <Route path="/projects/:id" element={<AppLayout><ProjectDetailPage /></AppLayout>} />
-
-          {/* Protected */}
-          <Route element={<PrivateRoute />}>
-            <Route path="/notifications" element={<AppLayout><NotificationsPage /></AppLayout>} />
-
-            {/* Student only */}
-            <Route element={<RoleRoute allowedRoles={['STUDENT']} redirectTo="/" />}>
-              <Route path="/my-projects" element={<AppLayout><MyProjectsPage /></AppLayout>} />
-            </Route>
-
-            {/* Recruiter only */}
-            <Route element={<RoleRoute allowedRoles={['RECRUITER']} redirectTo="/" />}>
-              <Route path="/following" element={<AppLayout><FollowingPage /></AppLayout>} />
-            </Route>
-
-            {/* Admin only */}
-            <Route element={<RoleRoute allowedRoles={['ADMIN']} redirectTo="/" />}>
-              <Route path="/admin" element={<AppLayout><AdminPage /></AppLayout>} />
-            </Route>
-          </Route>
+          {/* Protected Routes */}
+          <Route path="/" element={<PrivateRoute><HomePage /></PrivateRoute>} />
+          <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+          
+          <Route path="/exhibitions" element={<PrivateRoute><ExhibitionListPage /></PrivateRoute>} />
+          <Route path="/reservations" element={<PrivateRoute><MyReservationsPage /></PrivateRoute>} />
+          <Route path="/reservations/new" element={<PrivateRoute><CreateReservationPage /></PrivateRoute>} />
+          <Route path="/reservations/:id" element={<PrivateRoute><ReservationDetailPage /></PrivateRoute>} />
+          
+          {/* Admin Routes */}
+          <Route path="/admin" element={<PrivateRoute requireAdmin><AdminDashboard /></PrivateRoute>} />
+          <Route path="/admin/exhibitions" element={<PrivateRoute requireAdmin><AdminExhibitionPage /></PrivateRoute>} />
 
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
-      </AuthProvider>
-    </BrowserRouter>
+      </main>
+      <Footer />
+    </div>
   );
-}
+};
+
+const App = () => (
+  <AuthProvider>
+    <Router>
+      <AppContent />
+    </Router>
+  </AuthProvider>
+);
+
+export default App;
