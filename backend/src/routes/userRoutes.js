@@ -1,15 +1,13 @@
 import express from 'express';
-import { followUser, unfollowUser, getFollowing, getAllUsers, deleteUser } from '../controllers/userController.js';
-import { authenticate, authorizeRole } from '../middlewares/authMiddleware.js';
+import { getProfile, updateProfile } from '../controllers/userController.js';
+import { getMyReservations } from '../controllers/reservationController.js';
+import { auditLog } from '../middlewares/auditMiddleware.js';
 
 const router = express.Router();
 
-router.get('/following', authenticate, getFollowing);
-router.post('/:id/follow', authenticate, followUser);
-router.delete('/:id/follow', authenticate, unfollowUser);
-
-// Admin only
-router.get('/all', authenticate, authorizeRole(['ADMIN']), getAllUsers);
-router.delete('/:id', authenticate, authorizeRole(['ADMIN']), deleteUser);
+router.get('/profile', getProfile);
+router.put('/profile', auditLog('UPDATE_PROFILE', 'users'), updateProfile);
+// Alias for get my reservations
+router.get('/reservations', getMyReservations);
 
 export default router;
