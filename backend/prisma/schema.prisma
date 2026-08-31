@@ -49,6 +49,7 @@ model User {
   audit_logs AuditLog[]
 
   @@map("users")
+  @@index([role])
 }
 
 model Exhibition {
@@ -68,6 +69,8 @@ model Exhibition {
   stall_inventory StallInventory[]
 
   @@map("exhibitions")
+  @@index([organizer_id])
+  @@index([start_date, end_date])
 }
 
 model Reservation {
@@ -88,6 +91,9 @@ model Reservation {
 
   @@unique([vendor_id, exhibition_id])
   @@map("reservations")
+  @@index([exhibition_id])
+  @@index([vendor_id])
+  @@index([status])
 }
 
 model StallInventory {
@@ -119,4 +125,6 @@ model AuditLog {
   created_at  DateTime @default(now())
 
   @@map("audit_logs")
+  @@index([user_id])
+  @@index([action])
 }
