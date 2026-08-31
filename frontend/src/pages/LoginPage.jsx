@@ -88,7 +88,8 @@ export default function LoginPage() {
         navigate('/', { replace: true });
       }
     } catch (err) {
-      setError(err.response?.data?.error ?? 'Authentication failed. Please check your credentials.');
+      const errorMsg = err.response?.data?.details?.[0]?.message || err.response?.data?.error || 'Authentication failed. Please check your credentials.';
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -194,6 +195,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              minLength={6}
             />
           </div>
 
